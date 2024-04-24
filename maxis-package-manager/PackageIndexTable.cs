@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
+using System.Windows;
 using static maxis_package_manager.ReversibleBinaryRead;
 using static maxis_package_manager.TypeIDs;
 
@@ -43,10 +44,11 @@ namespace maxis_package_manager
         }
 
         public PackageIndexTable(BinaryReader reader, PackageHeader info) {
-            Debug.WriteLine("Reading index table...");          
+            Debug.WriteLine("Reading index table...");
 
-            if (info.indexMinorVersion == 2) {  //MSA
-                
+            if (info.indexMinorVersion == 2)
+            {  //MSA
+
                 ulong num_unique_types = ReadUInt64(reader, info.isBigEndian);
                 TypeTableEntry[] types = new TypeTableEntry[num_unique_types];
 
@@ -54,7 +56,8 @@ namespace maxis_package_manager
 
                 Debug.WriteLine("Processing file type table, package makeup is:");
 
-                for (int i = 0; i < (uint)num_unique_types; i++) {
+                for (int i = 0; i < (uint)num_unique_types; i++)
+                {
                     TypeTableEntry typeEntry = new TypeTableEntry(reader, info.isBigEndian);
                     fileCount += typeEntry.fileCount;
                     types[i] = typeEntry;
@@ -66,18 +69,32 @@ namespace maxis_package_manager
                 files = new FileEntry[fileCount];
                 uint numFilesProcessed = 0;
 
-                foreach (TypeTableEntry type in types) {
-                    for (int i = 0; i < type.fileCount; i++) {
+                foreach (TypeTableEntry type in types)
+                {
+                    for (int i = 0; i < type.fileCount; i++)
+                    {
                         FileEntry fileEntry = new FileEntry(reader, info.isBigEndian);
                         fileEntry.typeID = type.typeID;
                         fileEntry.groupID = type.groupID;
-                        if (fileEntry.groupID != 0) {
+                        if (fileEntry.groupID != 0)
+                        {
                             fileEntry.compressed = true;
                         }
                         files[numFilesProcessed] = fileEntry;
                         numFilesProcessed++;
                     }
                 }
+            }
+            else {
+
+                MessageBox.Show("The joys of other index tables await! (Not yet implemented!)");
+            
+            
+            
+            
+            
+            
+            
             }
         }
     }

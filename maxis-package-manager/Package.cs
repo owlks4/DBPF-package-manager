@@ -20,12 +20,28 @@ namespace maxis_package_manager
         public Package(Stream f) {
 
             BinaryReader reader = new BinaryReader(f);
-            
+
             packageHeader = new PackageHeader(reader);
 
             reader.BaseStream.Position = packageHeader.indexOffset;
 
             indexTable = new PackageIndexTable(reader, packageHeader);
+        }
+        public byte[] dumpToByteArray() {
+
+            //TODO: Put all files together, compressing where necessary
+
+            //TODO: Call a function of the index table to reconstruct it according to its version and the files in the package
+
+            //TODO: Then call a function of the package header to reconstruct THAT, feeding it the necessary offsets and sizes from the file data blob and index table we just produced
+
+            //TODO: Finally, stick it all together and return the output
+                        
+            byte[] output = new byte[0]; //we will get the size from the combined size of its constituent arrays, which we will have obtained by this point
+
+            //TODO: insert the header, file contents and index table into the output byte array
+
+            return output;
         }
     }
 }
