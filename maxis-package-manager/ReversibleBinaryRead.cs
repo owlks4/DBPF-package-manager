@@ -13,7 +13,7 @@ namespace maxis_package_manager
             return bytes.Reverse().ToArray();
         }
 
-        public static uint ReadUInt32(BinaryReader reader, bool reverse) {            
+        public static uint ReadUInt32(BinaryReader reader, bool reverse) {
             if (reverse){
                 return BitConverter.ToUInt32(ReverseBytes(BitConverter.GetBytes(reader.ReadUInt32())));
             } else {
