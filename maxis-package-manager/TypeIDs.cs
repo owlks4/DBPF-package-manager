@@ -8,9 +8,9 @@ using System.Threading.Tasks;
 
 namespace maxis_package_manager
 {
-    internal class TypeIDs
+    public static class TypeIDs
     {
-        private TypeID[] typeIDs = new TypeID[] {
+        private static TypeID[] typeIDs = new TypeID[] {
             new TypeID("RMDL_MSK",0xF9E50586,"rmdl"),
             new TypeID("RMDL_MSA",0x2954E734,"rmdl"),
             new TypeID("WMDL_MSPC",0xB359C791,"wmdl"),
@@ -89,7 +89,7 @@ namespace maxis_package_manager
             }    
         }
 
-        public TypeID getTypeIDById(uint id) {
+        public static TypeID getTypeIDById(uint id) {
             foreach (TypeID t in typeIDs) {
                 if (t.id == id) {
                     return t;
@@ -98,7 +98,7 @@ namespace maxis_package_manager
             return null;        
         }
 
-        public TypeID getTypeIDByName(string name) {
+        public static TypeID getTypeIDByName(string name) {
             foreach (TypeID t in typeIDs){
                 if (t.name == name){
                     return t;
@@ -107,7 +107,7 @@ namespace maxis_package_manager
             return null;
         }
 
-        public TypeID[] getAllTypeIDsWithExtension(string extension)
+        public static TypeID[] getAllTypeIDsWithExtension(string extension)
         {
             List<TypeID> output = new List<TypeID>();
             foreach (TypeID t in typeIDs){

@@ -14,6 +14,7 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 using System.IO;
 using Microsoft.Win32;
+using static maxis_package_manager.PackageIndexTable;
 
 namespace maxis_package_manager
 {
@@ -27,12 +28,22 @@ namespace maxis_package_manager
             InitializeComponent();
         }
 
+        public Package package;
+
         private void OpenFile(object sender, RoutedEventArgs e)
         {
             OpenFileDialog openFileDialog = new OpenFileDialog();
 
             if (openFileDialog.ShowDialog() == true) {
-                Package p = new Package(openFileDialog.OpenFile());
+                package = new Package(openFileDialog.OpenFile());
+                loadInterfaceFromPackageContents();
+            }
+        }
+
+        private void loadInterfaceFromPackageContents() {
+            FileListView.Items.Clear();
+            foreach (FileEntry fileEntry in package.indexTable.files){
+                FileListView.Items.Add(fileEntry.hash + " ("+fileEntry.typeID.name+")");
             }
         }
     }

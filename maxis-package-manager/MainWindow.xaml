@@ -15,7 +15,7 @@
                     <MenuItem Header="_Save"/>
                 </MenuItem>
             </Menu>
-            <DockPanel LastChildFill="False" Width="292">
+            <DockPanel LastChildFill="False" Width="374">
                 <ListView x:Name="FileListView" d:ItemsSource="{d:SampleData ItemCount=5}" DockPanel.Dock="Top">
                     <ListView.View>
                         <GridView>

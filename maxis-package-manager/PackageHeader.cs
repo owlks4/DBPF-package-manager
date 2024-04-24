@@ -18,8 +18,14 @@ namespace maxis_package_manager
         public uint majorVersion;
         public uint minorVersion;
         public int numFiles;
-        public uint indexOffset;
         public uint indexLength;
+        public uint holeEntryCount;
+        public uint holeOffset;
+        public uint holeSize;
+        
+        public uint indexMajorVersion;
+        public uint indexMinorVersion;
+        public uint indexOffset;
 
         public PackageHeader(BinaryReader reader) {
 
@@ -62,33 +68,38 @@ namespace maxis_package_manager
             Debug.WriteLine("Timestamp: " + timestamp.ToString());
 
             numFiles = 0;
-            indexOffset = 0;
             indexLength = 0;
 
             if (majorVersion == 1)
             {
                 numFiles = ReadInt32(reader, isBigEndian);
-                indexOffset = (uint)(reader.BaseStream.Length - ReadUInt32(reader, isBigEndian));
+                reader.BaseStream.Position += 0x04; // ? actually, looks important
+                ReadInt32(reader, isBigEndian); // unknown, but sums with next value to make total filesize (when counting from 0x10). You'd think data length, but not sure if that checks out
+                ReadInt32(reader, isBigEndian); // unknown, but sums with previous value to make total filesize (when counting from 0x10). You'd think index table length, but not sure if that checks out
+                ReadInt32(reader, isBigEndian); // unknown (is 1 in example)
+                ReadInt32(reader, isBigEndian); // unknown (is 1 in example)
+                ReadInt32(reader, isBigEndian); // total size (when counting from 0x10)
+                ReadInt32(reader, isBigEndian); // unknown (is 8 in example)
+                ReadInt32(reader, isBigEndian); // unknown (is 2 in example)
+                MessageBox.Show("Version 1 package reading is not yet implemented");
+                //then 0x20 of seemingly padding (all 0x00)
             }
             else
             {
-                reader.BaseStream.Position += 0x04;
+                indexMajorVersion = ReadUInt32(reader, isBigEndian);
                 numFiles = ReadInt32(reader, isBigEndian);
-                if (majorVersion == 2)
-                {
-                    reader.BaseStream.Position += 0x04;
-                    indexOffset = (uint)(reader.BaseStream.Length - ReadUInt32(reader, isBigEndian));
-                    reader.BaseStream.Position += 0x04;
-                }
-                else if (majorVersion == 3)
-                {
-                    indexOffset = ReadUInt32(reader, isBigEndian); //For major version 3, this value isn't subtracted from EOF; it's stored directly as an offset.
-                    indexLength = ReadUInt32(reader, isBigEndian);
-                }
+                reader.BaseStream.Position += 0x04; //skip deprecated index offset (sometimes has a value, sometimes doesn't, 0 in Version 2 but has value in Version 3)
+                indexLength = ReadUInt32(reader, isBigEndian);
+                holeEntryCount = ReadUInt32(reader, isBigEndian);
+                holeOffset = ReadUInt32(reader, isBigEndian);
+                holeSize = ReadUInt32(reader, isBigEndian);
+                indexMinorVersion = ReadUInt32(reader, isBigEndian);
+                indexOffset = (uint)ReadUInt64(reader, isBigEndian);                
+                reader.BaseStream.Position += 0x18;
             }
 
             Debug.WriteLine("Number of files: " + numFiles);
-            Debug.WriteLine("Offset of file list: " + indexOffset);
+            Debug.WriteLine("Index table offset: " + indexOffset);
         }
     }
 }
