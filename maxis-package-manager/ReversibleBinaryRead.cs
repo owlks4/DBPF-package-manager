@@ -64,5 +64,77 @@ namespace maxis_package_manager
                 return reader.ReadInt64();
             }
         }
+
+        public static byte[] getBytesUInt64(ulong input, bool isBigEndian) {
+            if (isBigEndian) {
+                return BitConverter.GetBytes(input).Reverse().ToArray();
+            } else {
+                return BitConverter.GetBytes(input);
+            }
+        }
+
+        public static byte[] getBytesInt64(long input, bool isBigEndian)
+        {
+            if (isBigEndian)
+            {
+                return BitConverter.GetBytes(input).Reverse().ToArray();
+            }
+            else
+            {
+                return BitConverter.GetBytes(input);
+            }
+        }
+
+        public static byte[] getBytesUInt32(uint input, bool isBigEndian)
+        {
+            if (isBigEndian)
+            {
+                return BitConverter.GetBytes(input).Reverse().ToArray();
+            }
+            else
+            {
+                return BitConverter.GetBytes(input);
+            }
+        }
+
+        public static byte[] getBytesUInt16(ushort input, bool isBigEndian)
+        {
+            if (isBigEndian)
+            {
+                return BitConverter.GetBytes(input).Reverse().ToArray();
+            }
+            else
+            {
+                return BitConverter.GetBytes(input);
+            }
+        }
+
+
+        public static uint getFNV_1Hash(byte[] input)
+        {
+            uint hash = 2166136261;
+
+            foreach (byte b in input)
+            {
+                hash = hash * 16777619;
+                hash = hash ^ b;
+            }
+
+            return hash;
+        }
+
+        public static ulong getFNV_1_Hash_64(byte[] input)
+        {
+            ulong hash = 14695981039346656037;
+
+            foreach (byte b in input)
+            {
+                hash = hash * 1099511628211;
+                hash = hash ^ b;
+            }
+
+            return hash;
+        }
+
     }
 }

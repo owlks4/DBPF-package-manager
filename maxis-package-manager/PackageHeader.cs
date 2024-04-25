@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection.PortableExecutable;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
@@ -26,6 +27,10 @@ namespace maxis_package_manager
         public uint indexMajorVersion;
         public uint indexMinorVersion;
         public uint indexOffset;
+        
+        public uint indexSubVariant = 256; // only used sometimes; 256 is just a null value for our purposes
+
+        public DateTime lastModified;
 
         public PackageHeader(BinaryReader reader) {
 
@@ -64,8 +69,8 @@ namespace maxis_package_manager
 
             reader.BaseStream.Position += 0x0C;
 
-            DateTime timestamp = DateTime.FromBinary(ReadInt64(reader, isBigEndian));
-            Debug.WriteLine("Timestamp: " + timestamp.ToString());
+            lastModified = DateTime.FromBinary(ReadInt64(reader, isBigEndian));
+            Debug.WriteLine("Timestamp: " + lastModified.ToString());
 
             numFiles = 0;
             indexLength = 0;
@@ -100,6 +105,61 @@ namespace maxis_package_manager
 
             Debug.WriteLine("Number of files: " + numFiles);
             Debug.WriteLine("Index table offset: " + indexOffset);
+        }
+
+        public byte[] constructHeader(uint newNumFiles, uint newIndexTableOffset, uint newIndexTableLength)
+        {
+            List<byte> output = new List<byte>();
+
+            byte[] magic = new byte[] { (byte)'D', (byte)'B', (byte)'P', (byte)'F' };
+
+            if (isBigEndian) {
+                output.AddRange(magic.Reverse());
+            } else {
+                output.AddRange(magic);
+            }
+
+            output.AddRange(getBytesUInt32(majorVersion, isBigEndian));
+            output.AddRange(getBytesUInt32(minorVersion, isBigEndian));
+            
+            for (int i = 0; i < 0x0C; i++) {
+                output.Add(0x00);
+            }
+
+            output.AddRange(getBytesInt64(DateTime.Now.ToBinary(), isBigEndian));
+
+            if (majorVersion == 1) {
+                MessageBox.Show("Writing header for package with major version 1 not yet implemented");
+            }
+            else {
+                output.AddRange(getBytesUInt32(indexMajorVersion, isBigEndian));
+                output.AddRange(getBytesUInt32(newNumFiles, isBigEndian));
+                output.AddRange(getBytesUInt32(majorVersion == 3 ? newIndexTableOffset : 0, isBigEndian)); //indexoffsetdeprecated
+                output.AddRange(getBytesUInt32(newIndexTableLength, isBigEndian));
+                output.AddRange(getBytesUInt32(0, isBigEndian)); //hole entry count
+                output.AddRange(getBytesUInt32(0, isBigEndian)); //hole offset
+                output.AddRange(getBytesUInt32(0, isBigEndian)); //hole size
+                output.AddRange(getBytesUInt32(indexMinorVersion, isBigEndian));
+                output.AddRange(getBytesUInt64((ulong)newIndexTableOffset, isBigEndian));
+                for (int i = 0; i < 0x08; i++) {
+                    output.Add(0x00);
+                }
+                if (majorVersion == 2){
+                    for (int i = 0; i < 0x10; i++){
+                        output.Add(0x00);
+                    }
+                }
+                else {
+                    for (int i = 0; i < 0x08; i++) { //some apparently crucial padding...
+                        output.Add(0x55);
+                    }
+                    for (int i = 0; i < 0x08; i++) {
+                        output.Add(0x00);
+                    }
+                }
+            }
+
+            return output.ToArray();
         }
     }
 }

@@ -9,20 +9,35 @@
     <Grid>
         <DockPanel LastChildFill="False">
             <Menu DockPanel.Dock="Top">
-                <MenuItem Header="_File" Click="OpenFile">
-                    <MenuItem Header="_New"/>
-                    <MenuItem Header="_Open"/>
-                    <MenuItem Header="_Save"/>
+                <MenuItem Header="_File">
+                    <MenuItem Header="_Open" Click="OpenPackage"/>
+                    <MenuItem Header="_Save" Click="SavePackage"/>
+                </MenuItem>
+                <MenuItem Header="_Tools">
+                    <MenuItem Header="_Mass export" Click="MassExport"/>
                 </MenuItem>
             </Menu>
-            <DockPanel LastChildFill="False" Width="374">
-                <ListView x:Name="FileListView" d:ItemsSource="{d:SampleData ItemCount=5}" DockPanel.Dock="Top">
-                    <ListView.View>
-                        <GridView>
-                            <GridViewColumn/>
-                        </GridView>
-                    </ListView.View>
-                </ListView>
+            <DockPanel LastChildFill="False" Width="366">
+                <GroupBox Header="Package contents" Height="404" DockPanel.Dock="Top">
+                    <ListView x:Name="FileListView" d:ItemsSource="{d:SampleData ItemCount=5}" DockPanel.Dock="Top" Height="359" RenderTransformOrigin="0.5,0.5" HorizontalAlignment="Left" Width="345" SelectionChanged="fileListSelectionChanged"/>
+                </GroupBox>
+            </DockPanel>
+            <DockPanel Width="409" LastChildFill="False" DockPanel.Dock="Right">
+                <DockPanel LastChildFill="False" Height="123" DockPanel.Dock="Top">
+                    <GroupBox Header="Package information" Width="404" Height="113" DockPanel.Dock="Top">
+                        <TextBlock x:Name="packageInfoLabel" TextWrapping="Wrap" HorizontalAlignment="Left" Margin="10,0,0,0" Width="384" Height="80"/>
+                    </GroupBox>
+                </DockPanel>
+                <DockPanel LastChildFill="False" Height="292" DockPanel.Dock="Top">
+                    <GroupBox Header="Information about your selected file" Width="404" Height="279" DockPanel.Dock="Top">
+                        <DockPanel Height="249" RenderTransformOrigin="0.5,0.5" LastChildFill="False">
+                            <DockPanel RenderTransformOrigin="0.5,0.5" LastChildFill="False" DockPanel.Dock="Top">
+                                <TextBlock x:Name="fileInfo" TextWrapping="Wrap" Margin="5,0,11,0" Height="75" Width="383"/>
+                            </DockPanel>
+                            <DockPanel RenderTransformOrigin="0.5,0.5" LastChildFill="False" DockPanel.Dock="Top"/>
+                        </DockPanel>
+                    </GroupBox>
+                </DockPanel>
             </DockPanel>
         </DockPanel>
     </Grid>
