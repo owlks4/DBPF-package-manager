@@ -6,7 +6,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 
-namespace maxis_package_manager
+namespace DBPF_package_manager
 {
     /// <summary>
     /// Interaction logic for App.xaml

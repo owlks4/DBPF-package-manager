@@ -9,12 +9,12 @@ using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
 using System.Windows;
 using System.Windows.Interop;
-using static maxis_package_manager.PackageIndexTable;
-using static maxis_package_manager.ReversibleBinaryRead;
-using static maxis_package_manager.TypeIDs;
+using static DBPF_package_manager.PackageIndexTable;
+using static DBPF_package_manager.ReversibleBinaryRead;
+using static DBPF_package_manager.TypeIDs;
 using static System.Formats.Asn1.AsnWriter;
 
-namespace maxis_package_manager
+namespace DBPF_package_manager
 {
     public class PackageIndexTable
     {

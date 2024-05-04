@@ -15,12 +15,12 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls.Ribbon;
 using System.Windows.Media.Media3D;
-using static maxis_package_manager.PackageIndexTable;
-using static maxis_package_manager.ReversibleBinaryRead;
+using static DBPF_package_manager.PackageIndexTable;
+using static DBPF_package_manager.ReversibleBinaryRead;
 using UnluacNET;
 using SharpGLTF;
 
-namespace maxis_package_manager
+namespace DBPF_package_manager
 {
     public static class TypeIDs
     {

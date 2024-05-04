@@ -6,13 +6,13 @@ using System.Threading.Tasks;
 using System.IO;
 using System.Windows;
 using System.Diagnostics;
-using static maxis_package_manager.ReversibleBinaryRead;
+using static DBPF_package_manager.ReversibleBinaryRead;
 using System.Reflection.Metadata.Ecma335;
-using static maxis_package_manager.PackageIndexTable;
+using static DBPF_package_manager.PackageIndexTable;
 using System.Printing.IndexedProperties;
-using static maxis_package_manager.TypeIDs;
+using static DBPF_package_manager.TypeIDs;
 
-namespace maxis_package_manager
+namespace DBPF_package_manager
 {
     public class Package
     {
@@ -108,7 +108,7 @@ namespace maxis_package_manager
                 //Debug.WriteLine(f.getSummary());
 
                 if (f.compressed && !hasGivenCompressionDevWarningOnce) {
-                    MessageBox.Show("!!!! A compressed file - does it need special handling? Should it already have been stored as compressed at all times by maxis-package-manager, and can we assume it is still compressed?");
+                    MessageBox.Show("!!!! A compressed file - does it need special handling? Should it already have been stored as compressed at all times by DBPF-package-manager, and can we assume it is still compressed?");
                     hasGivenCompressionDevWarningOnce = true;
                 }
 

@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace maxis_package_manager
+namespace DBPF_package_manager
 {
     public static class ReversibleBinaryRead
     {

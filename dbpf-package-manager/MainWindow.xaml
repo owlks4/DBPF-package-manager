@@ -1,11 +1,11 @@
-﻿<Window x:Class="maxis_package_manager.MainWindow"
+﻿<Window x:Class="DBPF_package_manager.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:maxis_package_manager"
+        xmlns:local="clr-namespace:DBPF_package_manager"
         mc:Ignorable="d"
-        Title="Maxis Package Manager" Height="450" Width="800">
+        Title="DBPF Package Manager" Height="450" Width="800">
     <Grid>
         <DockPanel LastChildFill="False">
             <Menu DockPanel.Dock="Top">

@@ -14,13 +14,13 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 using System.IO;
 using Microsoft.Win32;
-using static maxis_package_manager.PackageIndexTable;
+using static DBPF_package_manager.PackageIndexTable;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
-using static maxis_package_manager.TypeIDs;
+using static DBPF_package_manager.TypeIDs;
 
 
-namespace maxis_package_manager
+namespace DBPF_package_manager
 {
     /// <summary>
     /// Interaction logic for MainWindow.xaml
@@ -39,7 +39,7 @@ namespace maxis_package_manager
         private void OpenPackage(object sender, RoutedEventArgs e)
         {
             OpenFileDialog openFileDialog = new OpenFileDialog();
-            openFileDialog.Filter = "Maxis Package (*.package) | *.package";
+            openFileDialog.Filter = "Maxis DBPF Package (*.package) | *.package";
 
             if (openFileDialog.ShowDialog() == true)
             {
@@ -96,7 +96,7 @@ namespace maxis_package_manager
             {
                 SaveFileDialog saveFileDialog = new SaveFileDialog();
                 saveFileDialog.Title = "Save package file";
-                saveFileDialog.Filter = "Maxis Package (*.package) | *.package";
+                saveFileDialog.Filter = "Maxis DBPF Package (*.package) | *.package";
                 if (saveFileDialog.ShowDialog() == true)
                 {
                     string oldPackagePath = ((FileStream)package.reader.BaseStream).Name; //remember the path of the currently open package

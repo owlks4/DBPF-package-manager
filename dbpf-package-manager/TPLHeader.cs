@@ -8,9 +8,9 @@ using System.Reflection.PortableExecutable;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
-using static maxis_package_manager.ReversibleBinaryRead;
+using static DBPF_package_manager.ReversibleBinaryRead;
 
-namespace maxis_package_manager
+namespace DBPF_package_manager
 {
     public class TPLHeader
     {
