@@ -1,4 +1,5 @@
-﻿using Microsoft.Win32;
+﻿using Microsoft.VisualBasic.FileIO;
+using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -16,6 +17,8 @@ using System.Windows.Controls.Ribbon;
 using System.Windows.Media.Media3D;
 using static maxis_package_manager.PackageIndexTable;
 using static maxis_package_manager.ReversibleBinaryRead;
+using UnluacNET;
+using SharpGLTF;
 
 namespace maxis_package_manager
 {
@@ -33,9 +36,9 @@ namespace maxis_package_manager
             new TypeID("_MTS_MSA",0x787E842A,"mtst"),
             new TypeID("CLIP_MSK",0x6B20C4F3,"animclip"),
             new TypeID("CLIP_MSA",0xD6BEDA43,"animclip"),
-            new TypeID("GEOM_MSK",0xF9E50586,"rmdl"),
-            new TypeID("GEOM_MSA",0x2954E734,"rmdl"),
-            new TypeID("GEOM_MSPC",0xB359C791,"wmdl"),
+            new TypeID("GEOM_MSK",0xF9E50586,"rmdl", exportModel, replaceModel),
+            new TypeID("GEOM_MSA",0x2954E734,"rmdl", exportModel, replaceModel),
+            new TypeID("GEOM_MSPC",0xB359C791,"wmdl", exportModel, replaceModel),
             new TypeID("GRND_MSK",0xD5988020,"hkx"),
             new TypeID("GRND_MSA",0x1A8FEB14,"hkx"),           
             new TypeID("GRPT_MS",0x2c81b60a,"fpst"),   
@@ -61,20 +64,16 @@ namespace maxis_package_manager
             new TypeID("BIG_MSA",0x2699C28D,"big"),    
                 
             new TypeID("FX",0x6B772503,"fx"),
-            new TypeID("LUAC_MSA",0x3681D75B,"luac"),
-            new TypeID("LUAC_MSK",0x2B8E2411,"luac"),
+            new TypeID("LUAC_MSA",0x3681D75B,"lua", exportLuac, replaceLuac),
+            new TypeID("LUAC_MSK",0x2B8E2411,"lua", exportLuac, replaceLuac),
 
-       
             new TypeID("BUILDABLEREGION_MSA",0x41C4A8EF,"buildableregion"),
             new TypeID("BUILDABLEREGION_MSK",0xC84ACD30,"buildableregion"),
             new TypeID("LLMF_MSK",0x58969018,"llmf"),
             new TypeID("LLMF_MSA",0xA5DCD485,"llmf"),
 
-
-  
             new TypeID("TTF_MSK",0x89AF85AD,"ttf"),
             new TypeID("TTF_MSA",0x276CA4B9,"ttf"),
-
 
             new TypeID("VOXELGRIDDATA_MSK",0x614ED283,"vgd"),  
             new TypeID("VOXELGRIDDATA_MSA",0x9614D3C0,"vgd"),
@@ -85,20 +84,20 @@ namespace maxis_package_manager
             new TypeID("SPEEDTREE_MS",0x021d7e8c,"speedtree"),
             new TypeID("COMPOSITETEXTURE_MS",0x8e342417,"compositetexture"),
             new TypeID("SIMOUTFIT_MS",0x025ed6f4,"simoutfit"),
-            new TypeID("LEVELXML_MS",0x585ee310,"levelxml"),
-            new TypeID("LUA_MSK",0x474999b4,"lua"), 
-            new TypeID("LIGHTSETXML_MS",0x50182640,"ltstxml"), 
+            new TypeID("LEVELXML_MS",0x585ee310,"xml"),
+            new TypeID("LUA_MSK",0x474999b4,"lua"), // This is just regular lua text, so doesn't need any custom export/replace options, as it doesn't have to be transformed in any way.
+            new TypeID("LIGHTSETXML_MS",0x50182640,"xml"), 
             new TypeID("LIGHTSETBIN_MSK",0x50002128,"ltst"), 
             new TypeID("XML_MS",0xdc37e964,"xml"),
-            new TypeID("XML2_MS",0x6d3e3fb4,"xml2"),
+            new TypeID("XML2_MS",0x6d3e3fb4,"xml"),
             new TypeID("OBJECTCONSTRUCTIONXML_MS",0xc876c85e,"objectconstructionxml"),
             new TypeID("OBJECTCONSTRUCTIONBIN_MS",0xc08ec0ee,"objectconstruction"),
-            new TypeID("SLOTXML_MS",0x4045d294,"slotxml"),
+            new TypeID("SLOTXML_MS",0x4045d294,"xml"),
         
             new TypeID("XMLBIN_MS",0xe0d83029,"xmlbin"),
-            new TypeID("CABXML_MS",0xa6856948,"cabxml"),
+            new TypeID("CABXML_MS",0xa6856948,"xml"),
             new TypeID("CABBIN_MS",0xc644f440,"cabbin"),
-            new TypeID("LIGHTBOXXML_MS",0xb61215e9,"lightboxxml"),
+            new TypeID("LIGHTBOXXML_MS",0xb61215e9,"xml"),
             new TypeID("LIGHTBOXBIN_MS",0xd6215201,"lightboxbin"),
             new TypeID("XMB_MS",0x1e1e6516,"xmb")
         };
@@ -234,8 +233,111 @@ namespace maxis_package_manager
             return new ExportDetails(MainWindow.package.getSpecificFileEntryContent(f), f.typeID.extension, makeFilterStringForAlternatingDescsAndExtensions(new string[] { f.typeID.name, f.typeID.extension }));
         }
 
+        public static void replaceModel(FileEntry f)
+        {
+            MessageBox.Show("Model replacements are not currently allowed (GLTF compatibility needs to be created first)");
+
+            byte[] bytesOfFileToReplace = MainWindow.package.getSpecificFileEntryContent(f);
+            uint magicOfFileToReplace = BitConverter.ToUInt32(bytesOfFileToReplace, 0);
+
+            OpenFileDialog openFileDialog = new OpenFileDialog();
+            openFileDialog.Filter = makeFilterStringForAlternatingDescsAndExtensions(new string[] { "GLTF model", "gltf"});
+            openFileDialog.Title = "Replace file";
+
+            if (openFileDialog.ShowDialog() == true)
+            {
+                SharpGLTF.Schema2.ModelRoot model = SharpGLTF.Schema2.ModelRoot.Load(openFileDialog.FileName);
+                ModelWrapper wrapper = new ModelWrapper(model);
+
+                if (magicOfFileToReplace == 0x4C444D52) { //RMDL
+                    f.substitutionBytes = wrapper.dumpRevolutionModelBytes();
+                }
+                else if (magicOfFileToReplace == 0x4C444D57) { //WMDL
+                    f.substitutionBytes = wrapper.dumpWindowsModelBytes();
+                } else {
+                    MessageBox.Show("Unknown file magic on the model format you're trying to replace.","Error");
+                }
+
+                Debug.WriteLine("Need to re-evaluate compression status here possibly?");
+            }
+        }
+
+        public static ExportDetails exportModel(FileEntry f)
+        {
+            //temporarily defaulting to the raw export method
+            MessageBox.Show("Temporarily exporting model in its raw format (you probably won't be able to do much with this)");
+            return new ExportDetails(MainWindow.package.getSpecificFileEntryContent(f), f.typeID.extension, makeFilterStringForAlternatingDescsAndExtensions(new string[] { f.typeID.name, f.typeID.extension }));
+        }
+
+        public static void replaceLuac(FileEntry f)
+        {
+            MessageBox.Show("Lua replacements are not currently allowed (lua compiling with a particular version of the lua compiler needs to be implemented first.)");
+        }
+
+        public static ExportDetails exportLuac(FileEntry f)
+        {
+            byte[] bytes = MainWindow.package.getSpecificFileEntryContent(f);
+
+            Stream stream = new MemoryStream(bytes);
+
+            var header = new BHeader(stream);
+
+            LFunction lmain = header.Function.Parse(stream, header);
+
+            Decompiler d = new Decompiler(lmain);
+            d.Decompile();
+
+            MemoryStream output = new MemoryStream();
+
+            using (var writer = new StreamWriter(output, new UTF8Encoding(false)))
+            {
+                d.Print(new Output(writer));
+                writer.Flush();
+            }
+
+            return new ExportDetails(output.ToArray(), f.typeID.extension, makeFilterStringForAlternatingDescsAndExtensions(new string[] { "Lua script", "lua" }));
+        }
+
         public static void replaceImage(FileEntry f) {
-            MessageBox.Show("Replacing images has not yet been implemented!");
+            byte[] bytesOfFileToReplace = MainWindow.package.getSpecificFileEntryContent(f);
+            uint magic = BitConverter.ToUInt32(bytesOfFileToReplace, 0);
+
+            string filetype = f.typeID.name;
+            string extension = "*";
+
+            OpenFileDialog openFileDialog = new OpenFileDialog();
+            openFileDialog.Title = "Replace file";
+
+            switch (magic) {
+                case 0x4901FE14:
+                    filetype = "TPL image";
+                    extension = "tpl";
+                    break;
+                case 0x20534444:
+                    filetype = "DDS image";
+                    extension = "dds";
+                    break;
+                case 0x474E5089:
+                    filetype = "PNG image";
+                    extension = "png";
+                    break;
+                default:
+                    Debug.WriteLine("The parser isn't sure what kind of image we're meant to be replacing here! (No file magic matches.)");
+                    break;
+            }
+
+            openFileDialog.Filter = makeFilterStringForAlternatingDescsAndExtensions(new string[] { filetype, extension });
+
+            if (openFileDialog.ShowDialog() == true)
+            {
+                f.substitutionBytes = File.ReadAllBytes(openFileDialog.FileName);
+
+                if (extension == "tpl") {
+                    f.substitutionBytes = convertToSimsTPL(f.substitutionBytes, (ushort)(bytesOfFileToReplace[4] << 8 | bytesOfFileToReplace[5]));
+                }
+               
+                Debug.WriteLine("Need to re-evaluate compression status here possibly?");
+            }
         }
 
         public static ExportDetails exportImage(FileEntry f)
@@ -249,7 +351,7 @@ namespace maxis_package_manager
 
             switch (magic) {
                 case 0x4901FE14:
-                    filetype = "Nintendo TPL image";
+                    filetype = "TPL image";
                     extension = "tpl";
                     break;
                 case 0x20534444:
@@ -267,83 +369,55 @@ namespace maxis_package_manager
 
             string filterString = makeFilterStringForAlternatingDescsAndExtensions(new string[] { filetype, extension });
 
-            if (filetype == "Nintendo TPL image"){
+            if (extension == "tpl") {
                 return new ExportDetails(convertToNintendoTPL(bytes), extension, filterString);
             }
             else {
                 return new ExportDetails(bytes, extension, filterString);
             }
+          
         }
 
         public static byte[] convertToNintendoTPL(byte[] simsTPL) {
 
-            byte version = simsTPL[5];
-
             BinaryReader reader = new BinaryReader(new MemoryStream(simsTPL));
 
-            ushort width = 0;
-            ushort height = 0;
-            byte imageFormat = 0;
-            uint imageCount = 0;
-            uint imageDataOffset = 0;
-            uint imageSize = 0;
+            TPLHeader tpl = new TPLHeader(reader);
 
-            switch (version) {
-                case 1:
-                case 2:
-                    reader.BaseStream.Position = 0x1C;
-                    width = ReadUInt16(reader, true);
-                    height = ReadUInt16(reader, true);
-                    reader.BaseStream.Position += 3;
-                    imageFormat = reader.ReadByte();
-                    imageCount = ReadUInt32(reader, true);
-                    imageDataOffset = 0x4C;
-                    imageSize = (uint)(width * height * 4);
-                    break;
-                case 3:
-                    reader.BaseStream.Position = 0x08;
-                    imageSize = ReadUInt32(reader, true);
-                    reader.BaseStream.Position = 0x18;
-                    width = ReadUInt16(reader, true);
-                    height = ReadUInt16(reader, true);
-                    reader.BaseStream.Position += 3;
-                    imageFormat = reader.ReadByte();
-                    imageCount = ReadUInt32(reader, true);
-                    reader.BaseStream.Position = 0x38;
-                    imageDataOffset = ReadUInt32(reader, true);
-                    break;
-                default:
-                    MessageBox.Show("Unknown Sims TPL type!");
-                    break;
-            }
+            byte[] headerBytes = tpl.dumpToNintendoHeaderBytes();
+            byte[] output = new byte[headerBytes.Length + tpl.imageDataSize];
+    
+            reader.BaseStream.Position = tpl.imageDataOffset;
 
-            List<byte> output = new List<byte>();
+            byte[] imageData = reader.ReadBytes((int)tpl.imageDataSize);
 
-            output.AddRange(getBytesUInt32(0x0020AF30, true));
-            output.AddRange(getBytesUInt32(0x00000001, true)); //ideally this should be image count, but I don't want to make this more than one until I'm sure that the nintendo format header creation is robust enough to support multiple images in one TPL file
-            output.AddRange(getBytesUInt32(0x0000000C, true));
-            output.AddRange(getBytesUInt32(0x00000014, true));
-            output.AddRange(getBytesUInt32(0x00000000, true));
-            output.AddRange(getBytesUInt16(height, true));
-            output.AddRange(getBytesUInt16(width, true));
-            output.AddRange(getBytesUInt32((uint)imageFormat, true));
-            output.AddRange(getBytesUInt32(0x00000060, true));
-            output.AddRange(getBytesUInt32(0x00000000, true));
-            output.AddRange(getBytesUInt32(0x00000000, true));
-            output.AddRange(getBytesUInt32(0x00000001, true));
-            output.AddRange(getBytesUInt32(0x00000001, true));
+            Array.Copy(headerBytes, 0, output, 0, headerBytes.Length);
+            Array.Copy(imageData, 0, output, headerBytes.Length, imageData.Length);
 
-            for (int i = 0; i < 12; i++) {
-                output.AddRange(getBytesUInt32(0x00000000, true));
-            }
+            reader.Close();
 
-            reader.BaseStream.Position = imageDataOffset;
+            return output;
+        }
 
-            byte[] imageData = reader.ReadBytes((int)imageSize);
+        public static byte[] convertToSimsTPL(byte[] nintendoTPL, ushort version)
+        {
+            BinaryReader reader = new BinaryReader(new MemoryStream(nintendoTPL));
 
-            output.AddRange(imageData);
+            TPLHeader tpl = new TPLHeader(reader);
 
-            return output.ToArray();
+            byte[] headerBytes = tpl.dumpToSimsHeaderBytes(version);
+            byte[] output = new byte[headerBytes.Length + tpl.imageDataSize];
+
+            reader.BaseStream.Position = tpl.imageDataOffset;
+
+            byte[] imageData = reader.ReadBytes((int)tpl.imageDataSize);
+
+            Array.Copy(headerBytes, 0, output, 0, headerBytes.Length);
+            Array.Copy(imageData, 0, output, headerBytes.Length, imageData.Length);
+
+            reader.Close();
+
+            return output;
         }
     }
 }

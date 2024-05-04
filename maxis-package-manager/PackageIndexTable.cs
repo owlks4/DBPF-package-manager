@@ -43,7 +43,7 @@ namespace maxis_package_manager
             public uint uncompressedSizeIfRequired;
             public ulong checksum; //only so that we can remember it for a short time before we write it after the index table of V3 packages when compiling to a package - we don't load it from the file or verify it.
 
-            public byte[] substitutionBytes;
+            public byte[] substitutionBytes = null; // MUST initialise as null - as we often compare this value to null to check whether the substitution exists or not.
 
             public uint flags = 0x00010000; //this seems to be a common value for the flags, so we default to this for the benefit of user-added files, and hope it makes them compatible, because I'm not sure what these four bytes actually do
 
@@ -139,7 +139,7 @@ namespace maxis_package_manager
                             if (i == 0) {
                                 Debug.WriteLine("NB these fields are filled in a slightly more enlightening way in Sims 4 packages, so you might be able to get a better idea of their function by looking at those.");
                             }
-        
+
                             fileEntry.offset = ReadUInt32(reader, info.isBigEndian);
                             fileEntry.size = ReadUInt32(reader, info.isBigEndian) & 0x7FFFFFFF;
                             fileEntry.uncompressedSizeIfRequired = ReadUInt32(reader, info.isBigEndian);
@@ -169,7 +169,7 @@ namespace maxis_package_manager
                             fileEntry.offset = ReadUInt32(reader, info.isBigEndian);
                             fileEntry.size = ReadUInt32(reader, info.isBigEndian) & 0x7FFFFFFF;
                             fileEntry.uncompressedSizeIfRequired = ReadUInt32(reader, info.isBigEndian);
-                            
+
                             fileEntry.flags = ReadUInt32(reader, info.isBigEndian);
 
                             if (fileEntry.size != fileEntry.uncompressedSizeIfRequired)
@@ -195,7 +195,7 @@ namespace maxis_package_manager
                             fileEntry.offset = ReadUInt32(reader, info.isBigEndian);
                             fileEntry.size = ReadUInt32(reader, info.isBigEndian) & 0x7FFFFFFF;
                             fileEntry.uncompressedSizeIfRequired = ReadUInt32(reader, info.isBigEndian);
-                            
+
                             fileEntry.flags = ReadUInt32(reader, info.isBigEndian);
 
                             if (fileEntry.size != fileEntry.uncompressedSizeIfRequired)
@@ -254,7 +254,7 @@ namespace maxis_package_manager
 
                             files[i] = fileEntry;
                         }
-                    break;
+                        break;
                 }
             }
             else {

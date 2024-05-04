@@ -30,11 +30,19 @@ namespace maxis_package_manager
 
             indexTable = new PackageIndexTable(reader, packageHeader);
 
+            if (indexTable.files != null && indexTable.files.Length == 0) {
+                MessageBox.Show("Package was empty...");
+            }
+
             surveyTypeOrderInBlob();       
         }
 
         public void surveyTypeOrderInBlob() {
             Debug.WriteLine("Btw... order of first occurrences of each type ID in the blob (in blob order) is:");
+
+            if (indexTable.files == null) {
+                return;
+            }
 
             FileEntry[] filesInOffsetOrder = indexTable.files.OrderBy(f => f.offset).ToArray();
             List<TypeID> typeIDsInOrderOfBlobOccurrence = new List<TypeID>();
@@ -54,7 +62,8 @@ namespace maxis_package_manager
             for (int i = 0; i < indexTable.files.Length; i++) {
                 if (indexTable.files[i] == f) {
                     MainWindow.package.reader.BaseStream.Position = f.offset;
-                    byte[] bytes = MainWindow.package.reader.ReadBytes((int)f.size);
+                    byte[] bytes = f.substitutionBytes == null ? MainWindow.package.reader.ReadBytes((int)f.size) : f.substitutionBytes;
+
                     if (f.compressed) {
                         Debug.WriteLine("Exporting a compressed file - wouldn't it be good to handle this and make sure that the version the user exports is uncompressed?");
                     }

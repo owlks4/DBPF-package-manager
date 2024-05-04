@@ -27,7 +27,7 @@ namespace maxis_package_manager
         public uint indexMajorVersion;
         public uint indexMinorVersion;
         public uint indexOffset;
-        
+
         public uint indexSubVariant = 256; // only used sometimes; 256 is just a null value for our purposes
 
         public DateTime lastModified;
@@ -77,17 +77,7 @@ namespace maxis_package_manager
 
             if (majorVersion == 1)
             {
-                numFiles = ReadInt32(reader, isBigEndian);
-                reader.BaseStream.Position += 0x04; // ? actually, looks important
-                ReadInt32(reader, isBigEndian); // unknown, but sums with next value to make total filesize (when counting from 0x10). You'd think data length, but not sure if that checks out
-                ReadInt32(reader, isBigEndian); // unknown, but sums with previous value to make total filesize (when counting from 0x10). You'd think index table length, but not sure if that checks out
-                ReadInt32(reader, isBigEndian); // unknown (is 1 in example)
-                ReadInt32(reader, isBigEndian); // unknown (is 1 in example)
-                ReadInt32(reader, isBigEndian); // total size (when counting from 0x10)
-                ReadInt32(reader, isBigEndian); // unknown (is 8 in example)
-                ReadInt32(reader, isBigEndian); // unknown (is 2 in example)
                 MessageBox.Show("Version 1 package reading is not yet implemented");
-                //then 0x20 of seemingly padding (all 0x00)
             }
             else
             {

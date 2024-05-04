@@ -15,4 +15,14 @@
     <Page Remove="examples\**" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="SharpGLTF.Core" Version="1.0.0-alpha0031" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="UnluacNET">
+      <HintPath>lib\UnluacNET.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
 </Project>

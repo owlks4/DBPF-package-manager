@@ -44,13 +44,16 @@ namespace maxis_package_manager
             if (openFileDialog.ShowDialog() == true)
             {
                 openPackageAtPath(openFileDialog.FileName);
-                fileInfo.Text = "<---- Select a subfile from the list to see information about it here.";
             }
         }
 
         private void openPackageAtPath(string path)
         {
-            package = new Package(File.OpenRead(path));
+            if (package != null) { //for the package that is already open, if there is one
+                package.reader.Close();
+            }
+
+            package = new Package(File.OpenRead(path)); //for the current package that we just opened
             loadInterfaceFromPackageContents();
         }
 
@@ -175,9 +178,7 @@ namespace maxis_package_manager
                 return;
             }
 
-            FileEntry fileEntry = fileEntryLookupForListView[(ListViewItem)list.SelectedItem];
-            Debug.WriteLine(fileEntry.typeID.info);
-            fileInfo.Text = fileEntry.typeID.info == null || fileEntry.typeID.info == "" ? "There is currently no info listed regarding this typeID." : fileEntry.typeID.info;
+            FileEntry fileEntry = fileEntryLookupForListView[(ListViewItem)list.SelectedItem];       
         }
 
         private void MassExport(object sender, RoutedEventArgs e)
