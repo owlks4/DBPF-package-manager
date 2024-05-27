@@ -19,6 +19,7 @@ using static DBPF_package_manager.PackageIndexTable;
 using static DBPF_package_manager.ReversibleBinaryRead;
 using UnluacNET;
 using SharpGLTF;
+using System.Security.Policy;
 
 namespace DBPF_package_manager
 {
@@ -29,7 +30,7 @@ namespace DBPF_package_manager
 
         private static TypeID[] typeIDs = new TypeID[] {
             new TypeID("_IMG_MSK",0x00B2D882, "img", exportImage, replaceImage),
-            new TypeID("_IMG_MSA",0x92AA4D6A, "img", exportImage, replaceImage),            
+            new TypeID("_IMG_MSA",0x92AA4D6A, "img", exportImage, replaceImage),
             new TypeID("_MTD_MSK",0x01D0E75D,"matd"),
             new TypeID("_MTD_MSA",0xE6640542,"matd"),
             new TypeID("_MTS_MSK",0x02019972,"mtst"),
@@ -40,8 +41,8 @@ namespace DBPF_package_manager
             new TypeID("GEOM_MSA",0x2954E734,"rmdl", exportModel, replaceModel),
             new TypeID("GEOM_MSPC",0xB359C791,"wmdl", exportModel, replaceModel),
             new TypeID("GRND_MSK",0xD5988020,"hkx"),
-            new TypeID("GRND_MSA",0x1A8FEB14,"hkx"),           
-            new TypeID("GRPT_MS",0x2c81b60a,"fpst"),   
+            new TypeID("GRND_MSA",0x1A8FEB14,"hkx"),
+            new TypeID("GRPT_MS",0x2c81b60a,"fpst"),
             new TypeID("GRPT_MSK",0x8101A6EA,"fpst"),
             new TypeID("GRPT_MSA",0x0EFC1A82,"fpst"),
             new TypeID("GRRG_MSK",0x8EAF13DE,"rig"),
@@ -58,11 +59,11 @@ namespace DBPF_package_manager
             new TypeID("OBJECTGRIDVOLUMEDATA_MSA",0x8FC0DE5A,"ogvd"),
             new TypeID("LTST_MSA",0xE55D5715,"ltst"),
 
-            new TypeID("BNK_MSK",0xB6B5C271,"bnk"),   
+            new TypeID("BNK_MSK",0xB6B5C271,"bnk"),
             new TypeID("BNK_MSA",0x2199BB60,"bnk"),
-            new TypeID("BIG_MSK",0x5bca8c06,"big"),    
-            new TypeID("BIG_MSA",0x2699C28D,"big"),    
-                
+            new TypeID("BIG_MSK",0x5bca8c06,"big"),
+            new TypeID("BIG_MSA",0x2699C28D,"big"),
+
             new TypeID("FX",0x6B772503,"fx"),
             new TypeID("LUAC_MSA",0x3681D75B,"lua", exportLuac, replaceLuac),
             new TypeID("LUAC_MSK",0x2B8E2411,"lua", exportLuac, replaceLuac),
@@ -75,7 +76,7 @@ namespace DBPF_package_manager
             new TypeID("TTF_MSK",0x89AF85AD,"ttf"),
             new TypeID("TTF_MSA",0x276CA4B9,"ttf"),
 
-            new TypeID("VOXELGRIDDATA_MSK",0x614ED283,"vgd"),  
+            new TypeID("VOXELGRIDDATA_MSK",0x614ED283,"vgd"),
             new TypeID("VOXELGRIDDATA_MSA",0x9614D3C0,"vgd"),
             new TypeID("MODEL_MS",0x01661233,"model"),
             new TypeID("KEYNAMEMAP_MS",0x0166038c,"keynamemap"),
@@ -86,20 +87,27 @@ namespace DBPF_package_manager
             new TypeID("SIMOUTFIT_MS",0x025ed6f4,"simoutfit"),
             new TypeID("LEVELXML_MS",0x585ee310,"xml"),
             new TypeID("LUA_MSK",0x474999b4,"lua"), // This is just regular lua text, so doesn't need any custom export/replace options, as it doesn't have to be transformed in any way.
-            new TypeID("LIGHTSETXML_MS",0x50182640,"xml"), 
-            new TypeID("LIGHTSETBIN_MSK",0x50002128,"ltst"), 
+            new TypeID("LIGHTSETXML_MS",0x50182640,"xml"),
+            new TypeID("LIGHTSETBIN_MSK",0x50002128,"ltst"),
             new TypeID("XML_MS",0xdc37e964,"xml"),
             new TypeID("XML2_MS",0x6d3e3fb4,"xml"),
             new TypeID("OBJECTCONSTRUCTIONXML_MS",0xc876c85e,"objectconstructionxml"),
             new TypeID("OBJECTCONSTRUCTIONBIN_MS",0xc08ec0ee,"objectconstruction"),
             new TypeID("SLOTXML_MS",0x4045d294,"xml"),
-        
+
             new TypeID("XMLBIN_MS",0xe0d83029,"xmlbin"),
             new TypeID("CABXML_MS",0xa6856948,"xml"),
             new TypeID("CABBIN_MS",0xc644f440,"cabbin"),
             new TypeID("LIGHTBOXXML_MS",0xb61215e9,"xml"),
             new TypeID("LIGHTBOXBIN_MS",0xd6215201,"lightboxbin"),
-            new TypeID("XMB_MS",0x1e1e6516,"xmb")
+            new TypeID("XMB_MS",0x1e1e6516,"xmb"),
+
+            new TypeID("STR#_SIMS2",0x53545223,"str#"),
+            new TypeID("CTSS_SIMS2",0x43545353, "ctss"),
+            new TypeID("BHAV_SIMS2",0x42484156,"bhav"),
+            new TypeID("OBJD_SIMS2",0x4F424A44,"objd"),
+            new TypeID("OBJf_SIMS2",0x4F424A66,"objf"),
+            new TypeID("CLST_SIMS2",0xE86B1EEF,"clst")
         };
 
         public class TypeID {
@@ -150,7 +158,10 @@ namespace DBPF_package_manager
             // If we reach this point, we weren't able to find that typeID in the list, so we add one to the list just for this session, so that if we encounter another instance of this type, it *will* find it in the list and be counted as the same type.
 
             TypeID[] amendedTypeIDArray = new TypeID[typeIDs.Length + 1];
-            TypeID newTypeID = new TypeID("Type_"+id, id, "unknownType_"+id);
+
+            string idAsHexString = "0x" + Convert.ToHexString(BitConverter.GetBytes(id).Reverse().ToArray());
+
+            TypeID newTypeID = new TypeID("Type_"+ idAsHexString, id, "unknownType_"+ idAsHexString);
 
             for (int i = 0; i < typeIDs.Length; i++) {
                 amendedTypeIDArray[i] = typeIDs[i];            
@@ -266,7 +277,7 @@ namespace DBPF_package_manager
         {
             //temporarily defaulting to the raw export method
             MessageBox.Show("Temporarily exporting model in its raw format (you probably won't be able to do much with this)");
-            return new ExportDetails(MainWindow.package.getSpecificFileEntryContent(f), f.typeID.extension, makeFilterStringForAlternatingDescsAndExtensions(new string[] { f.typeID.name, f.typeID.extension }));
+            return exportRaw(f);
         }
 
         public static void replaceLuac(FileEntry f)
@@ -274,8 +285,18 @@ namespace DBPF_package_manager
             MessageBox.Show("Lua replacements are not currently allowed (lua compiling with a particular version of the lua compiler needs to be implemented first.)");
         }
 
+        public static ulong[] bannedLuaHashes = new ulong[] { 16869782828849130396, 3213009328539534276, 9958500636700497877, 16001598926280908521,
+            11266562898505549506, 17288546901413378355, 2147615780746242819, 7158314187567625540, 15714336265186944586, 8738643847246926277, 15009483124799770057};
+
         public static ExportDetails exportLuac(FileEntry f)
         {
+            foreach (ulong h in bannedLuaHashes) {
+                if (f.hash == h) {
+                    MessageBox.Show("File with hash " + f.hash + " is known to cause a crash on export due to a problem with unluac; exporting it as raw luac.");
+                    return new ExportDetails(MainWindow.package.getSpecificFileEntryContent(f), "luac" , makeFilterStringForAlternatingDescsAndExtensions(new string[] { f.typeID.name, "luac" }));
+                }
+            }
+
             byte[] bytes = MainWindow.package.getSpecificFileEntryContent(f);
 
             Stream stream = new MemoryStream(bytes);
@@ -289,8 +310,9 @@ namespace DBPF_package_manager
 
             MemoryStream output = new MemoryStream();
 
-            using (var writer = new StreamWriter(output, new UTF8Encoding(false)))
+            using (var writer = new StreamWriter(output))
             {
+                Debug.WriteLine(f.hash);
                 d.Print(new Output(writer));
                 writer.Flush();
             }

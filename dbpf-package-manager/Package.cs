@@ -57,23 +57,6 @@ namespace DBPF_package_manager
             }
         }
 
-        public byte[] getSpecificFileEntryContent(FileEntry f) {
-
-            for (int i = 0; i < indexTable.files.Length; i++) {
-                if (indexTable.files[i] == f) {
-                    MainWindow.package.reader.BaseStream.Position = f.offset;
-                    byte[] bytes = f.substitutionBytes == null ? MainWindow.package.reader.ReadBytes((int)f.size) : f.substitutionBytes;
-
-                    if (f.compressed) {
-                        Debug.WriteLine("Exporting a compressed file - wouldn't it be good to handle this and make sure that the version the user exports is uncompressed?");
-                    }
-                    return bytes;
-                }            
-            }
-            Debug.WriteLine("Failed to find that file entry in the package, so could not retrieve its bytes!");
-            return null;
-        }
-
         public byte[] dumpToByteArray() {
 
             bool hasGivenCompressionDevWarningOnce = false;
@@ -197,6 +180,27 @@ namespace DBPF_package_manager
             Debug.WriteLine("Do certain MSK packages need padding to a multiple of 0x20 at the end? Is it required to make them align in memory?");
 
             return output;
+        }
+
+        public byte[] getSpecificFileEntryContent(FileEntry f)
+        {
+
+            for (int i = 0; i < indexTable.files.Length; i++)
+            {
+                if (indexTable.files[i] == f)
+                {
+                    MainWindow.package.reader.BaseStream.Position = f.offset;
+                    byte[] bytes = f.substitutionBytes == null ? MainWindow.package.reader.ReadBytes((int)f.size) : f.substitutionBytes;
+
+                    if (f.compressed)
+                    {
+                        Debug.WriteLine("Exporting a compressed file - wouldn't it be good to handle this and make sure that the version the user exports is uncompressed?");
+                    }
+                    return bytes;
+                }
+            }
+            Debug.WriteLine("Failed to find that file entry in the package, so could not retrieve its bytes!");
+            return null;
         }
     }
 }

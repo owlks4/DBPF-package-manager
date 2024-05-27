@@ -30,6 +30,10 @@ namespace DBPF_package_manager
         public MainWindow()
         {
             InitializeComponent();
+            string[] args = Environment.GetCommandLineArgs();
+            if (args.Length >= 2) {
+                openPackageAtPath(args[1]);
+            }
         }
 
         public static Package package;
@@ -39,7 +43,7 @@ namespace DBPF_package_manager
         private void OpenPackage(object sender, RoutedEventArgs e)
         {
             OpenFileDialog openFileDialog = new OpenFileDialog();
-            openFileDialog.Filter = "Maxis DBPF Package (*.package) | *.package";
+            openFileDialog.Filter = "DBPF Package (*.package) | *.package";
 
             if (openFileDialog.ShowDialog() == true)
             {
@@ -73,7 +77,9 @@ namespace DBPF_package_manager
             }
             else
             {
-                foreach (FileEntry fileEntry in package.indexTable.files)
+                FileEntry[] sortedFileEntries = package.indexTable.files.OrderBy(f => f.hash).ToArray(); // by sorting, we abandon the original order, which in some cases I have good reason to believe is the original alphabetical order (before the filenames were turned into hashes)
+
+                foreach (FileEntry fileEntry in sortedFileEntries)
                 {
                     ListViewItem newItem = new ListViewItem();
                     string s = getHexStringFromHash(fileEntry.hash) + " (" + fileEntry.typeID.name + ")"; //the Reverse() is there because we want to display it as big-endian, it's nothing to do with the game being big-endian.
@@ -83,8 +89,8 @@ namespace DBPF_package_manager
                     FileListView.Items.Add(newItem);
                 }
             }
-
-            packageInfoLabel.Text = "Package version: v " + package.packageHeader.majorVersion + "." + package.packageHeader.minorVersion;
+            packageInfoLabel.Text = "Local filename: " + System.IO.Path.GetFileName(((FileStream)package.reader.BaseStream).Name) + "\n";
+            packageInfoLabel.Text += "Package version: v " + package.packageHeader.majorVersion + "." + package.packageHeader.minorVersion;
             packageInfoLabel.Text += "\nIndex version: v " + package.packageHeader.indexMajorVersion + "." + package.packageHeader.indexMinorVersion + (package.packageHeader.indexSubVariant == 256 ? " (No subvariant)" : " (Subvariant " + package.packageHeader.indexSubVariant + ")");
             packageInfoLabel.Text += "\nEndian: " + (package.packageHeader.isBigEndian ? "Big-endian" : "Little-endian");
             packageInfoLabel.Text += "\nLast modified: " + package.packageHeader.lastModified;
@@ -96,7 +102,7 @@ namespace DBPF_package_manager
             {
                 SaveFileDialog saveFileDialog = new SaveFileDialog();
                 saveFileDialog.Title = "Save package file";
-                saveFileDialog.Filter = "Maxis DBPF Package (*.package) | *.package";
+                saveFileDialog.Filter = "DBPF Package (*.package) | *.package";
                 if (saveFileDialog.ShowDialog() == true)
                 {
                     string oldPackagePath = ((FileStream)package.reader.BaseStream).Name; //remember the path of the currently open package
@@ -199,7 +205,11 @@ namespace DBPF_package_manager
                     foreach (FileEntry f in package.indexTable.files)
                     {
                         ExportDetails details = f.typeID.typeIDSpecificExport(f);
-   
+                        if (details == null) {
+                            Debug.WriteLine("Skipping export of " + f.hash + " because its ExportDetails were null.");
+                            continue;
+                        }
+
                         string silentExportPath = System.IO.Path.Combine(dir, getHexStringFromHash(f.hash)+"."+details.extension);
                         File.WriteAllBytes(silentExportPath, details.content);
                     }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Net.NetworkInformation;
 using System.Reflection.PortableExecutable;
 using System.Text;
 using System.Threading.Tasks;
@@ -80,186 +81,219 @@ namespace DBPF_package_manager
         public PackageIndexTable(BinaryReader reader, PackageHeader info) {
             Debug.WriteLine("Reading index table...");
 
-            if (info.indexMinorVersion == 2)
-            {  //MSA
+            if (info.indexMajorVersion == 0) {
+                if (info.indexMinorVersion == 2)
+                {  //MSA
 
-                ulong num_unique_types = ReadUInt64(reader, info.isBigEndian);
-                TypeTableEntry[] types = new TypeTableEntry[num_unique_types];
+                    ulong num_unique_types = ReadUInt64(reader, info.isBigEndian);
+                    TypeTableEntry[] types = new TypeTableEntry[num_unique_types];
 
-                uint fileCount = 0;
+                    uint fileCount = 0;
 
-                Debug.WriteLine("Processing file type table, package makeup is:");
+                    Debug.WriteLine("Processing file type table, package makeup is:");
 
-                for (int i = 0; i < (uint)num_unique_types; i++)
-                {
-                    TypeTableEntry typeEntry = new TypeTableEntry(reader, info.isBigEndian);
-                    fileCount += typeEntry.fileCount;
-                    types[i] = typeEntry;
-                    Debug.WriteLine(typeEntry.fileCount + "x " + typeEntry.typeID.name);
-                }
-
-                //which brings us up to the beginning of the actual files...
-
-                files = new FileEntry[fileCount];
-                uint numFilesProcessed = 0;
-
-                foreach (TypeTableEntry type in types)
-                {
-                    for (int i = 0; i < type.fileCount; i++)
+                    for (int i = 0; i < (uint)num_unique_types; i++)
                     {
-                        bool isCompressed = type.groupID != 0;
-                        FileEntry fileEntry = new FileEntry(reader, info.isBigEndian, isCompressed);
-                        fileEntry.typeID = type.typeID;
-                        fileEntry.groupID = type.groupID;
-                        files[numFilesProcessed] = fileEntry;
-                        numFilesProcessed++;
+                        TypeTableEntry typeEntry = new TypeTableEntry(reader, info.isBigEndian);
+                        fileCount += typeEntry.fileCount;
+                        types[i] = typeEntry;
+                        Debug.WriteLine(typeEntry.fileCount + "x " + typeEntry.typeID.name);
+                    }
+
+                    //which brings us up to the beginning of the actual files...
+
+                    files = new FileEntry[fileCount];
+                    uint numFilesProcessed = 0;
+
+                    foreach (TypeTableEntry type in types)
+                    {
+                        for (int i = 0; i < type.fileCount; i++)
+                        {
+                            bool isCompressed = type.groupID != 0;
+                            FileEntry fileEntry = new FileEntry(reader, info.isBigEndian, isCompressed);
+                            fileEntry.typeID = type.typeID;
+                            fileEntry.groupID = type.groupID;
+                            files[numFilesProcessed] = fileEntry;
+                            numFilesProcessed++;
+                        }
                     }
                 }
-            }
-            else if (info.indexMinorVersion == 3) { // Sims 3; Sims 4; Spore; MS; MSK
+                else if (info.indexMinorVersion == 3) { // Sims 3; Sims 4; Spore; MS; MSK
 
-                info.indexSubVariant = ReadUInt32(reader, info.isBigEndian);
+                    info.indexSubVariant = ReadUInt32(reader, info.isBigEndian);
+                    files = new FileEntry[info.numFiles];
+
+                    Debug.WriteLine("Index subvariant: " + info.indexSubVariant);
+
+                    switch (info.indexSubVariant)
+                    {
+                        default:
+                            MessageBox.Show("Index subvariant " + info.indexSubVariant + "is not yet implemented");
+                            break;
+                        case 0:
+                            for (uint i = 0; i < info.numFiles; i++)
+                            {
+                                FileEntry fileEntry = new FileEntry();
+
+                                fileEntry.typeID = getTypeIDById(ReadUInt32(reader, info.isBigEndian));
+                                fileEntry.groupID = ReadUInt32(reader, info.isBigEndian);
+                                reader.BaseStream.Position += 8; //one of these two 32-bit fields is a duplicate of the groupID.
+
+                                if (i == 0)
+                                {
+                                    Debug.WriteLine("NB these fields are filled in a slightly more enlightening way in Sims 4 packages, so you might be able to get a better idea of their function by looking at those.");
+                                }
+
+                                fileEntry.offset = ReadUInt32(reader, info.isBigEndian);
+                                fileEntry.size = ReadUInt32(reader, info.isBigEndian) & 0x7FFFFFFF;
+                                fileEntry.uncompressedSizeIfRequired = ReadUInt32(reader, info.isBigEndian);
+
+                                fileEntry.flags = ReadUInt32(reader, info.isBigEndian);
+
+                                fileEntry.hash = (ulong)fileEntry.offset;
+
+                                if (fileEntry.size != fileEntry.uncompressedSizeIfRequired)
+                                {
+                                    fileEntry.compressed = true;
+                                }
+
+                                files[i] = fileEntry;
+                            }
+                            break;
+                        case 2:
+                            reader.BaseStream.Position += 4;
+
+                            for (uint i = 0; i < info.numFiles; i++)
+                            {
+                                FileEntry fileEntry = new FileEntry();
+
+                                fileEntry.typeID = getTypeIDById(ReadUInt32(reader, info.isBigEndian));
+                                fileEntry.hash = (ulong)(ReadUInt32(reader, info.isBigEndian)) << 32;
+                                fileEntry.hash |= (ulong)(ReadUInt32(reader, info.isBigEndian));
+
+                                fileEntry.offset = ReadUInt32(reader, info.isBigEndian);
+                                fileEntry.size = ReadUInt32(reader, info.isBigEndian) & 0x7FFFFFFF;
+                                fileEntry.uncompressedSizeIfRequired = ReadUInt32(reader, info.isBigEndian);
+
+                                fileEntry.flags = ReadUInt32(reader, info.isBigEndian);
+
+                                if (fileEntry.size != fileEntry.uncompressedSizeIfRequired)
+                                {
+                                    fileEntry.compressed = true;
+                                }
+
+                                files[i] = fileEntry;
+                            }
+                            break;
+                        case 3:
+                            uint allFilesTypeID = ReadUInt32(reader, info.isBigEndian);
+                            reader.BaseStream.Position += 4;
+
+                            for (uint i = 0; i < info.numFiles; i++)
+                            {
+                                FileEntry fileEntry = new FileEntry();
+
+                                fileEntry.typeID = getTypeIDById(allFilesTypeID);
+                                fileEntry.hash = (ulong)(ReadUInt32(reader, info.isBigEndian)) << 32;
+                                fileEntry.hash |= (ulong)(ReadUInt32(reader, info.isBigEndian));
+
+                                fileEntry.offset = ReadUInt32(reader, info.isBigEndian);
+                                fileEntry.size = ReadUInt32(reader, info.isBigEndian) & 0x7FFFFFFF;
+                                fileEntry.uncompressedSizeIfRequired = ReadUInt32(reader, info.isBigEndian);
+
+                                fileEntry.flags = ReadUInt32(reader, info.isBigEndian);
+
+                                if (fileEntry.size != fileEntry.uncompressedSizeIfRequired)
+                                {
+                                    fileEntry.compressed = true;
+                                }
+
+                                files[i] = fileEntry;
+                            }
+                            break;
+                        case 4:
+                            reader.BaseStream.Position += 4;
+
+                            for (uint i = 0; i < info.numFiles; i++)
+                            {
+                                FileEntry fileEntry = new FileEntry();
+
+                                fileEntry.typeID = getTypeIDById(ReadUInt32(reader, info.isBigEndian));
+                                fileEntry.hash = (ulong)(ReadUInt32(reader, info.isBigEndian)) << 32;
+                                fileEntry.hash |= (ulong)(ReadUInt32(reader, info.isBigEndian));
+
+                                fileEntry.offset = ReadUInt32(reader, info.isBigEndian);
+                                fileEntry.size = ReadUInt32(reader, info.isBigEndian) & 0x7FFFFFFF;
+                                fileEntry.uncompressedSizeIfRequired = ReadUInt32(reader, info.isBigEndian);
+
+                                if (fileEntry.size != fileEntry.uncompressedSizeIfRequired)
+                                {
+                                    fileEntry.compressed = true;
+                                }
+
+                                fileEntry.flags = ReadUInt32(reader, info.isBigEndian);
+
+                                files[i] = fileEntry;
+                            }
+                            break;
+                        case 7:
+                            for (uint i = 0; i < info.numFiles; i++)
+                            {
+                                FileEntry fileEntry = new FileEntry();
+
+                                fileEntry.typeID = getTypeIDById(ReadUInt32(reader, info.isBigEndian));
+                                fileEntry.groupID = ReadUInt32(reader, info.isBigEndian);
+                                fileEntry.hash = (ulong)(ReadUInt32(reader, info.isBigEndian)) << 32;
+                                fileEntry.hash |= (ulong)(ReadUInt32(reader, info.isBigEndian));
+
+                                fileEntry.offset = ReadUInt32(reader, info.isBigEndian);
+                                fileEntry.size = ReadUInt32(reader, info.isBigEndian) & 0x7FFFFFFF;
+                                fileEntry.uncompressedSizeIfRequired = ReadUInt32(reader, info.isBigEndian);
+
+                                fileEntry.flags = ReadUInt32(reader, info.isBigEndian);
+
+                                if (fileEntry.size != fileEntry.uncompressedSizeIfRequired)
+                                {
+                                    fileEntry.compressed = true;
+                                }
+
+                                files[i] = fileEntry;
+                            }
+                            break;
+                    }
+                }
+                else {
+                    MessageBox.Show("The joys of other index table minor versions await! (Not yet implemented!)");
+                }
+            }
+            else if (info.indexMajorVersion == 7) {
                 files = new FileEntry[info.numFiles];
 
-                Debug.WriteLine("Index subvariant: " + info.indexSubVariant);
+                if (info.indexMinorVersion == 1 || info.indexMinorVersion == 2) {
 
-                switch (info.indexSubVariant) {
-                    default:
-                        MessageBox.Show("Index subvariant " + info.indexSubVariant + "is not yet implemented");
-                        break;
-                    case 0:
-                        for (uint i = 0; i < info.numFiles; i++)
-                        {
-                            FileEntry fileEntry = new FileEntry();
+                    for (uint i = 0; i < info.numFiles; i++) {
+                        FileEntry fileEntry = new FileEntry();
 
-                            fileEntry.typeID = getTypeIDById(ReadUInt32(reader, info.isBigEndian));
-                            fileEntry.groupID = ReadUInt32(reader, info.isBigEndian);
-                            reader.BaseStream.Position += 8; //one of these two 32-bit fields is a duplicate of the groupID.
-
-                            if (i == 0) {
-                                Debug.WriteLine("NB these fields are filled in a slightly more enlightening way in Sims 4 packages, so you might be able to get a better idea of their function by looking at those.");
-                            }
-
-                            fileEntry.offset = ReadUInt32(reader, info.isBigEndian);
-                            fileEntry.size = ReadUInt32(reader, info.isBigEndian) & 0x7FFFFFFF;
-                            fileEntry.uncompressedSizeIfRequired = ReadUInt32(reader, info.isBigEndian);
-
-                            fileEntry.flags = ReadUInt32(reader, info.isBigEndian);
-
-                            fileEntry.hash = (ulong)fileEntry.offset;
-
-                            if (fileEntry.size != fileEntry.uncompressedSizeIfRequired) {
-                                fileEntry.compressed = true;
-                            }
-
-                            files[i] = fileEntry;
+                        fileEntry.typeID = getTypeIDById(ReadUInt32(reader,info.isBigEndian));
+                        fileEntry.groupID = ReadUInt32(reader, info.isBigEndian);
+                        if (info.indexMinorVersion == 1) {
+                            fileEntry.hash = ReadUInt32(reader, info.isBigEndian);
                         }
-                        break;
-                    case 2:
-                        reader.BaseStream.Position += 4;
-
-                        for (uint i = 0; i < info.numFiles; i++)
-                        {
-                            FileEntry fileEntry = new FileEntry();
-
-                            fileEntry.typeID = getTypeIDById(ReadUInt32(reader, info.isBigEndian));
-                            fileEntry.hash = (ulong)(ReadUInt32(reader, info.isBigEndian)) << 32;
-                            fileEntry.hash |= (ulong)(ReadUInt32(reader, info.isBigEndian));
-
-                            fileEntry.offset = ReadUInt32(reader, info.isBigEndian);
-                            fileEntry.size = ReadUInt32(reader, info.isBigEndian) & 0x7FFFFFFF;
-                            fileEntry.uncompressedSizeIfRequired = ReadUInt32(reader, info.isBigEndian);
-
-                            fileEntry.flags = ReadUInt32(reader, info.isBigEndian);
-
-                            if (fileEntry.size != fileEntry.uncompressedSizeIfRequired)
-                            {
-                                fileEntry.compressed = true;
-                            }
-
-                            files[i] = fileEntry;
+                        else {
+                            fileEntry.hash = ReadUInt64(reader, info.isBigEndian);
                         }
-                        break;
-                    case 3:
-                        uint allFilesTypeID = ReadUInt32(reader, info.isBigEndian);
-                        reader.BaseStream.Position += 4;
-
-                        for (uint i = 0; i < info.numFiles; i++)
-                        {
-                            FileEntry fileEntry = new FileEntry();
-
-                            fileEntry.typeID = getTypeIDById(allFilesTypeID);
-                            fileEntry.hash = (ulong)(ReadUInt32(reader, info.isBigEndian)) << 32;
-                            fileEntry.hash |= (ulong)(ReadUInt32(reader, info.isBigEndian));
-
-                            fileEntry.offset = ReadUInt32(reader, info.isBigEndian);
-                            fileEntry.size = ReadUInt32(reader, info.isBigEndian) & 0x7FFFFFFF;
-                            fileEntry.uncompressedSizeIfRequired = ReadUInt32(reader, info.isBigEndian);
-
-                            fileEntry.flags = ReadUInt32(reader, info.isBigEndian);
-
-                            if (fileEntry.size != fileEntry.uncompressedSizeIfRequired)
-                            {
-                                fileEntry.compressed = true;
-                            }
-
-                            files[i] = fileEntry;
-                        }
-                        break;
-                    case 4:
-                        reader.BaseStream.Position += 4;
-
-                        for (uint i = 0; i < info.numFiles; i++)
-                        {
-                            FileEntry fileEntry = new FileEntry();
-
-                            fileEntry.typeID = getTypeIDById(ReadUInt32(reader, info.isBigEndian));
-                            fileEntry.hash = (ulong)(ReadUInt32(reader, info.isBigEndian)) << 32;
-                            fileEntry.hash |= (ulong)(ReadUInt32(reader, info.isBigEndian));
-
-                            fileEntry.offset = ReadUInt32(reader, info.isBigEndian);
-                            fileEntry.size = ReadUInt32(reader, info.isBigEndian) & 0x7FFFFFFF;
-                            fileEntry.uncompressedSizeIfRequired = ReadUInt32(reader, info.isBigEndian);
-
-                            if (fileEntry.size != fileEntry.uncompressedSizeIfRequired)
-                            {
-                                fileEntry.compressed = true;
-                            }
-
-                            fileEntry.flags = ReadUInt32(reader, info.isBigEndian);
-
-                            files[i] = fileEntry;
-                        }
-                        break;
-                    case 7:
-                        for (uint i = 0; i < info.numFiles; i++)
-                        {
-                            FileEntry fileEntry = new FileEntry();
-
-                            fileEntry.typeID = getTypeIDById(ReadUInt32(reader, info.isBigEndian));
-                            fileEntry.groupID = ReadUInt32(reader, info.isBigEndian);
-                            fileEntry.hash = (ulong)(ReadUInt32(reader, info.isBigEndian)) << 32;
-                            fileEntry.hash |= (ulong)(ReadUInt32(reader, info.isBigEndian));
-
-                            fileEntry.offset = ReadUInt32(reader, info.isBigEndian);
-                            fileEntry.size = ReadUInt32(reader, info.isBigEndian) & 0x7FFFFFFF;
-                            fileEntry.uncompressedSizeIfRequired = ReadUInt32(reader, info.isBigEndian);
-
-                            fileEntry.flags = ReadUInt32(reader, info.isBigEndian);
-
-                            if (fileEntry.size != fileEntry.uncompressedSizeIfRequired)
-                            {
-                                fileEntry.compressed = true;
-                            }
-
-                            files[i] = fileEntry;
-                        }
-                        break;
+                        fileEntry.offset = ReadUInt32(reader, info.isBigEndian) + 4;
+                        fileEntry.size = ReadUInt32(reader, info.isBigEndian) - 4;
+                        files[i] = fileEntry;
+                    }
+                }
+                else {
+                    MessageBox.Show("The joys of other index table minor versions await! (Not yet implemented!)");
                 }
             }
             else {
-                MessageBox.Show("The joys of other index tables await! (Not yet implemented!)");
-            }
+                 MessageBox.Show("The joys of other index table major versions await! (Not yet implemented!)");
+             }
         }
 
         public byte[] reconstructByteArray(PackageHeader info, FileEntry[] newFileEntries) { //info is NOT the up to date version of the package header, but we're using it to get information on the index version

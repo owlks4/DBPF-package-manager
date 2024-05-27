@@ -77,7 +77,16 @@ namespace DBPF_package_manager
 
             if (majorVersion == 1)
             {
-                MessageBox.Show("Version 1 package reading is not yet implemented");
+                //we're at offset 0x20 as we start this section
+                indexMajorVersion = ReadUInt32(reader, isBigEndian); //? usually 7, maybe index major version
+                numFiles = ReadInt32(reader, isBigEndian);
+                indexOffset = ReadUInt32(reader, isBigEndian); //is deprecated in newer versions? or...
+                indexLength= ReadUInt32(reader, isBigEndian); //is deprecated in newer versions? or...
+                holeEntryCount = ReadUInt32(reader, isBigEndian);
+                holeOffset = ReadUInt32(reader, isBigEndian);
+                holeSize = ReadUInt32(reader, isBigEndian);
+                indexMinorVersion = ReadUInt32(reader, isBigEndian); //Usually 1 or 2 for Sims 2
+                //0x20 of padding follows
             }
             else
             {
@@ -120,6 +129,7 @@ namespace DBPF_package_manager
 
             if (majorVersion == 1) {
                 MessageBox.Show("Writing header for package with major version 1 not yet implemented");
+                return null;
             }
             else {
                 output.AddRange(getBytesUInt32(indexMajorVersion, isBigEndian));
