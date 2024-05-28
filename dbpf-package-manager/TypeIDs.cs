@@ -246,7 +246,8 @@ namespace DBPF_package_manager
 
         public static void replaceModel(FileEntry f)
         {
-            MessageBox.Show("Model replacements are not currently allowed (GLTF compatibility needs to be created first)");
+            MessageBox.Show("Model replacements are not currently allowed (GLTF compatibility needs to be created first).");
+            return;
 
             byte[] bytesOfFileToReplace = MainWindow.package.getSpecificFileEntryContent(f);
             uint magicOfFileToReplace = BitConverter.ToUInt32(bytesOfFileToReplace, 0);
