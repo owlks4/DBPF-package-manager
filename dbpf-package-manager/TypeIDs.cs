@@ -1,25 +1,14 @@
-﻿using Microsoft.VisualBasic.FileIO;
-using Microsoft.Win32;
+﻿using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.DirectoryServices.ActiveDirectory;
 using System.IO;
 using System.Linq;
-using System.Reflection.PortableExecutable;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
-using System.Security.Cryptography;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Controls.Ribbon;
-using System.Windows.Media.Media3D;
 using static DBPF_package_manager.PackageIndexTable;
 using static DBPF_package_manager.ReversibleBinaryRead;
 using UnluacNET;
 using SharpGLTF;
-using System.Security.Policy;
 
 namespace DBPF_package_manager
 {
@@ -47,6 +36,7 @@ namespace DBPF_package_manager
             new TypeID("GRPT_MSA",0x0EFC1A82,"fpst"),
             new TypeID("GRRG_MSK",0x8EAF13DE,"rig"),
             new TypeID("GRRG_MSA",0x4672E5BD,"rig"),
+            new TypeID("IMAG_SC4",0x8A2482B9,"img", exportImage, replaceImage),
             new TypeID("IMAG_SPORE",0x2F7D0004, "img", exportImage, replaceImage),
             new TypeID("PART_MS",0x9752e396,"swm"),
             new TypeID("PART_MSK",0xcf60795e,"swm"),
@@ -368,7 +358,7 @@ namespace DBPF_package_manager
             byte[] bytes = MainWindow.package.getSpecificFileEntryContent(f);
 
             uint magic = BitConverter.ToUInt32(bytes, 0);
-   
+
             string filetype = "Unknown image format";
             string extension = "image";
 

@@ -43,7 +43,7 @@ namespace DBPF_package_manager
         private void OpenPackage(object sender, RoutedEventArgs e)
         {
             OpenFileDialog openFileDialog = new OpenFileDialog();
-            openFileDialog.Filter = "DBPF Package (*.package) | *.package";
+            openFileDialog.Filter = "DBPF Package (*.package, *.sc4) | *.sc4;*.package";
 
             if (openFileDialog.ShowDialog() == true)
             {

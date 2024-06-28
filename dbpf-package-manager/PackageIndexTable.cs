@@ -269,12 +269,25 @@ namespace DBPF_package_manager
             else if (info.indexMajorVersion == 7) {
                 files = new FileEntry[info.numFiles];
 
-                if (info.indexMinorVersion == 1 || info.indexMinorVersion == 2) {
+                if (info.indexMinorVersion == 0) { //sim city 4
+                    for (uint i = 0; i < info.numFiles; i++)
+                    {
+                        FileEntry fileEntry = new FileEntry();
+
+                        fileEntry.typeID = getTypeIDById(ReadUInt32(reader, info.isBigEndian));
+                        fileEntry.groupID = ReadUInt32(reader, info.isBigEndian);
+                        fileEntry.hash = ReadUInt32(reader, info.isBigEndian);
+                        fileEntry.offset = ReadUInt32(reader, info.isBigEndian);
+                        fileEntry.size = ReadUInt32(reader, info.isBigEndian);
+                        files[i] = fileEntry;
+                    }
+                }
+                else if (info.indexMinorVersion == 1 || info.indexMinorVersion == 2) { //sims 2
 
                     for (uint i = 0; i < info.numFiles; i++) {
                         FileEntry fileEntry = new FileEntry();
 
-                        fileEntry.typeID = getTypeIDById(ReadUInt32(reader,info.isBigEndian));
+                        fileEntry.typeID = getTypeIDById(ReadUInt32(reader, info.isBigEndian));
                         fileEntry.groupID = ReadUInt32(reader, info.isBigEndian);
                         if (info.indexMinorVersion == 1) {
                             fileEntry.hash = ReadUInt32(reader, info.isBigEndian);

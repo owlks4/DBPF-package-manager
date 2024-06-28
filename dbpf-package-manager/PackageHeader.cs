@@ -57,6 +57,7 @@ namespace DBPF_package_manager
 
             /*
                 Known versions so far:
+                sim city 4: v1.0 little endian
                 sims 2: v1.1 little endian                
                 mswii_presumably: v2.0 little endian
                 mspc: v2.0 little endian
@@ -69,7 +70,14 @@ namespace DBPF_package_manager
 
             reader.BaseStream.Position += 0x0C;
 
-            lastModified = DateTime.FromBinary(ReadInt64(reader, isBigEndian));
+            if (majorVersion > 1 || (majorVersion == 1 && minorVersion > 0))
+            {
+                lastModified = DateTime.FromBinary(ReadInt64(reader, isBigEndian));
+            }
+            else {
+                reader.BaseStream.Position += 0x08;
+            }
+            
             Debug.WriteLine("Timestamp: " + lastModified.ToString());
 
             numFiles = 0;
